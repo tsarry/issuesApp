@@ -6,15 +6,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
     $issue_id = $_POST['issue_id'];
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
+    $open_date = $_POST['open_date'];
+    $close_date = $_POST['close_date'];
     $priority = $_POST['priority'];
     $org = $_POST['org'];
     $project = $_POST['project'];
     $per_id = $_POST['per_id'];
 
     $pdo = Database::connect();
-    $sql = "UPDATE iss_issues SET short_description=?, long_description=?, priority=?, org=?, project=?, per_id=? WHERE id=?";
+    $sql = "UPDATE iss_issues SET short_description=?, long_description=?, open_date=?, close_date=?, priority=?, org=?, project=?, per_id=? WHERE id=?";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$short_description, $long_description, $priority, $org, $project, $per_id, $issue_id]);
+    $stmt->execute([$short_description, $long_description, $open_date, $close_date, $priority, $org, $project, $per_id, $issue_id]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -41,14 +43,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_issue_id'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) {
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
+    $open_date = $_POST['open_date'];
+    $close_date = $_POST['close_date'];
     $priority = $_POST['priority'];
     $org = $_POST['org'];
     $project = $_POST['project'];
     $per_id = $_POST['per_id'];
 
     $pdo = Database::connect();
-    $sql = 'INSERT INTO iss_issues (short_description, long_description, priority, org, project, per_id, open_date, close_date) 
-            VALUES (?, ?, ?, ?, ?, ?, NOW(), NULL)';
+    $sql = 'INSERT INTO iss_issues (short_description, long_description, open_date, close_date, priority, org, project, per_id) 
+            VALUES (?, ?, NOW(), NULL, ?, ?, ?, ?)';
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$short_description, $long_description, $priority, $org, $project, $per_id]);
     Database::disconnect();
@@ -112,8 +116,20 @@ Database::disconnect();
                 <textarea class="form-control" name="long_description" rows="4" required></textarea>
               </div>
               <div class="form-group">
+                <label for="open_date">Open Date</label>
+                <input type="date" class="form-control" name="open_date" required>
+              </div>
+              <div class="form-group">
+                <label for="close_date">Close Date</label>
+                <input type="date" class="form-control" name="close_date">
+              </div>
+              <div class="form-group">
                 <label for="priority">Priority</label>
-                <input type="text" class="form-control" name="priority" required>
+                <select class="form-control" name="priority" required>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
               </div>
               <div class="form-group">
                 <label for="org">Organization</label>
@@ -124,7 +140,7 @@ Database::disconnect();
                 <input type="text" class="form-control" name="project" required>
               </div>
               <div class="form-group">
-                <label for="per_id">Person ID</label>
+                <label for="per_id">Person</label>
                 <select class="form-control" name="per_id" required>
                   <?php
                     $pdo = Database::connect();
@@ -150,7 +166,11 @@ Database::disconnect();
         <tr>
           <th>ID</th>
           <th>Short Description</th>
+          <th>Open Date</th>
+          <th>Close Date</th>
           <th>Priority</th>
+          <th>Org</th>
+          <th>Project</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -159,7 +179,11 @@ Database::disconnect();
           <tr>
             <td><?php echo $issue['id']; ?></td>
             <td><?php echo $issue['short_description']; ?></td>
+            <td><?php echo $issue['open_date']; ?></td>
+            <td><?php echo $issue['close_date']; ?></td>
             <td><?php echo $issue['priority']; ?></td>
+            <td><?php echo $issue['org']; ?></td>
+            <td><?php echo $issue['project']; ?></td>
             <td>
               <!-- Read Button (R) -->
               <button class="btn btn-info" data-toggle="modal" data-target="#readIssueModal<?php echo $issue['id']; ?>">R</button>
@@ -185,12 +209,24 @@ Database::disconnect();
                 <div class="modal-body">
                   <form>
                     <div class="form-group">
+                      <label>Issue ID</label>
+                      <input type="text" class="form-control" value="<?php echo $issue['id']; ?>" readonly>
+                    </div>
+                    <div class="form-group">
                       <label>Short Description</label>
                       <input type="text" class="form-control" value="<?php echo $issue['short_description']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label>Long Description</label>
                       <textarea class="form-control" rows="4" readonly><?php echo $issue['long_description']; ?></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label>Open Date</label>
+                      <input type="date" class="form-control" value="<?php echo $issue['open_date']; ?>" readonly>
+                    </div>
+                    <div class="form-group">
+                      <label>Close Date</label>
+                      <input type="date" class="form-control" value="<?php echo $issue['close_date']; ?>" readonly>
                     </div>
                     <div class="form-group">
                       <label>Priority</label>
@@ -205,10 +241,113 @@ Database::disconnect();
                       <input type="text" class="form-control" value="<?php echo $issue['project']; ?>" readonly>
                     </div>
                     <div class="form-group">
-                      <label>Person</label>
+                      <label>Person ID</label>
                       <input type="text" class="form-control" value="<?php echo $issue['per_id']; ?>" readonly>
                     </div>
                   </form>
+
+                  <h5 class="mt-4">Comments</h5>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Short Comment</th>
+                            <th>Posted Date</th>
+                            <th>Person</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                            $pdo = Database::connect();
+                            $sql = 'SELECT iss_comments.id, iss_comments.short_comment, iss_comments.posted_date, iss_persons.fname, iss_persons.lname 
+                                    FROM iss_comments 
+                                    JOIN iss_persons ON iss_comments.per_id = iss_persons.id 
+                                    WHERE iss_comments.iss_id = ?';
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute([$issue['id']]);
+                            while ($comment = $stmt->fetch(PDO::FETCH_ASSOC)):
+                        ?>
+                            <tr>
+                                <td><?php echo $comment['short_comment']; ?></td>
+                                <td><?php echo $comment['posted_date']; ?></td>
+                                <td><?php echo $comment['fname'] . ' ' . $comment['lname']; ?></td>
+                                <td>
+                                    <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#readCommentModal<?php echo $comment['id']; ?>">R</button>
+                                    <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#updateCommentModal<?php echo $comment['id']; ?>">U</button>
+                                    <button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteCommentModal<?php echo $comment['id']; ?>">D</button>
+                                </td>
+                            </tr>
+
+                            <div class="modal fade" id="readCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="readCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="readCommentModalLabel<?php echo $comment['id']; ?>">Read Comment</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p><strong>Short Comment:</strong> <?php echo $comment['short_comment']; ?></p>
+                                            <p><strong>Posted Date:</strong> <?php echo $comment['posted_date']; ?></p>
+                                            <p><strong>Person:</strong> <?php echo $comment['fname'] . ' ' . $comment['lname']; ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="updateCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="updateCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="updateCommentModalLabel<?php echo $comment['id']; ?>">Update Comment</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form action="issues_list.php" method="POST">
+                                                <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
+                                                <div class="form-group">
+                                                    <label>Short Comment</label>
+                                                    <input type="text" class="form-control" name="short_comment" value="<?php echo $comment['short_comment']; ?>" required>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Long Comment</label>
+                                                    <textarea class="form-control" name="long_comment" ><?php echo $comment['long_comment']; ?></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-warning">Update Comment</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="deleteCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="deleteCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteCommentModalLabel<?php echo $comment['id']; ?>">Delete Comment</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete this comment?</p>
+                                            <form action="issues_list.php" method="POST">
+                                                <input type="hidden" name="delete_comment_id" value="<?php echo $comment['id']; ?>">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <?php endwhile; Database::disconnect(); ?>
+                    </tbody>
+                </table>
+                
                 </div>
               </div>
             </div>
@@ -236,8 +375,20 @@ Database::disconnect();
                       <textarea class="form-control" name="long_description" rows="4" required><?php echo $issue['long_description']; ?></textarea>
                     </div>
                     <div class="form-group">
+                      <label>Open Date</label>
+                      <input type="date" class="form-control" name="open_date" value="<?php echo $issue['open_date']; ?>" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Close Date</label>
+                      <input type="date" class="form-control" name="close_date" value="<?php echo $issue['close_date']; ?>">
+                    </div>
+                    <div class="form-group">
                       <label>Priority</label>
-                      <input type="text" class="form-control" name="priority" value="<?php echo $issue['priority']; ?>" required>
+                      <select class="form-control" name="priority" required>
+                        <option value="A" <?php echo ($issue['priority'] == 'A') ? 'selected' : ''; ?>>A</option>
+                        <option value="B" <?php echo ($issue['priority'] == 'B') ? 'selected' : ''; ?>>B</option>
+                        <option value="C" <?php echo ($issue['priority'] == 'C') ? 'selected' : ''; ?>>C</option>
+                      </select>
                     </div>
                     <div class="form-group">
                       <label>Organization</label>
