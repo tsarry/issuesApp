@@ -1,5 +1,13 @@
 <?php
 session_start(); // Start a session to store user data if login is successful
+
+// Check if the user is already logged in
+if (isset($_SESSION['user_id'])) {
+    // If already logged in, redirect to issues list page or any other page
+    header("Location: issues_list.php");
+    exit();
+}
+
 require '../database/database.php'; // Include the database connection file
 $pdo = Database::connect(); // Assuming you have a Database class to handle the connection
 
@@ -31,8 +39,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $lname = $user['lname'];
                 $storedHash = $user['pwd_hash'];
                 $storedSalt = $user['pwd_salt'];
-
-                
 
                 // Hash the entered password with the stored salt
                 $hashedPassword = md5($password . $storedSalt);
@@ -94,5 +100,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <button type="submit">Login</button>
     </form>
+
+    <!-- "Join" Button to go to the registration page -->
+    <p>Don't have an account? <a href="register.php">Join here</a></p>
 </body>
 </html>

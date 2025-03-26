@@ -1,4 +1,13 @@
 <?php
+session_start(); // Start the session
+
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    // If not logged in, redirect to login page
+    header("Location: login.php");
+    exit();
+}
+
 require '../database/database.php';
 
 // Handle Update
@@ -93,6 +102,19 @@ Database::disconnect();
     <button class="btn btn-success mb-3" data-toggle="modal" data-target="#addIssueModal">
       <i class="fa fa-plus"></i> Add Issue
     </button>
+
+    <!-- Button to redirect to persons_list.php -->
+    <a href="persons_list.php" class="btn btn-info mb-3">
+      <i class="fa fa-users"></i> View Persons List
+    </a>
+
+    <!-- Button to redirect to comments_list.php -->
+    <a href="comments_list.php" class="btn btn-info mb-3">
+      <i class="fa fa-comments"></i> View Comments List
+    </a>
+
+    <!-- Logout Button -->
+    <a href="logout.php"><button>Logout</button></a>
 
     <!-- Add New Issue Modal -->
     <div class="modal fade" id="addIssueModal" tabindex="-1" role="dialog" aria-labelledby="addIssueModalLabel" aria-hidden="true">
@@ -207,147 +229,47 @@ Database::disconnect();
                   </button>
                 </div>
                 <div class="modal-body">
-                  <form>
-                    <div class="form-group">
-                      <label>Issue ID</label>
-                      <input type="text" class="form-control" value="<?php echo $issue['id']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Short Description</label>
-                      <input type="text" class="form-control" value="<?php echo $issue['short_description']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Long Description</label>
-                      <textarea class="form-control" rows="4" readonly><?php echo $issue['long_description']; ?></textarea>
-                    </div>
-                    <div class="form-group">
-                      <label>Open Date</label>
-                      <input type="date" class="form-control" value="<?php echo $issue['open_date']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Close Date</label>
-                      <input type="date" class="form-control" value="<?php echo $issue['close_date']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Priority</label>
-                      <input type="text" class="form-control" value="<?php echo $issue['priority']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Organization</label>
-                      <input type="text" class="form-control" value="<?php echo $issue['org']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Project</label>
-                      <input type="text" class="form-control" value="<?php echo $issue['project']; ?>" readonly>
-                    </div>
-                    <div class="form-group">
-                      <label>Person ID</label>
-                      <input type="text" class="form-control" value="<?php echo $issue['per_id']; ?>" readonly>
-                    </div>
-                  </form>
+                  <p><strong>ID:</strong> <?= htmlspecialchars($issue['id']); ?></p>
+                  <p><strong>Short Description:</strong> <?= htmlspecialchars($issue['short_description']); ?></p>
+                  <p><strong>Long Description:</strong> <?= htmlspecialchars($issue['long_description']); ?></p>
+                  <p><strong>Open Date:</strong> <?= htmlspecialchars($issue['open_date']); ?></p>
+                  <p><strong>Close Date:</strong> <?= htmlspecialchars($issue['close_date']); ?></p>
+                  <p><strong>Priority:</strong> <?= htmlspecialchars($issue['priority']); ?></p>
+                  <p><strong>Organization:</strong> <?= htmlspecialchars($issue['org']); ?></p>
+                  <p><strong>Project:</strong> <?= htmlspecialchars($issue['project']); ?></p>
+                  <p><strong>Person ID:</strong> <?= htmlspecialchars($issue['per_id']); ?></p>
 
-                  <h5 class="mt-4">Comments</h5>
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Short Comment</th>
-                            <th>Posted Date</th>
-                            <th>Person</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                            $pdo = Database::connect();
-                            $sql = 'SELECT iss_comments.id, iss_comments.short_comment, iss_comments.posted_date, iss_persons.fname, iss_persons.lname 
-                                    FROM iss_comments 
-                                    JOIN iss_persons ON iss_comments.per_id = iss_persons.id 
-                                    WHERE iss_comments.iss_id = ?';
-                            $stmt = $pdo->prepare($sql);
-                            $stmt->execute([$issue['id']]);
-                            while ($comment = $stmt->fetch(PDO::FETCH_ASSOC)):
-                        ?>
-                            <tr>
-                                <td><?php echo $comment['short_comment']; ?></td>
-                                <td><?php echo $comment['posted_date']; ?></td>
-                                <td><?php echo $comment['fname'] . ' ' . $comment['lname']; ?></td>
-                                <td>
-                                    <button class="btn btn-info btn-sm" data-toggle="modal" data-target="#readCommentModal<?php echo $comment['id']; ?>">R</button>
-                                    <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#updateCommentModal<?php echo $comment['id']; ?>">U</button>
-                                    <button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteCommentModal<?php echo $comment['id']; ?>">D</button>
-                                </td>
-                            </tr>
+                  <!-- List of Comments for the Issue -->
+                  <h5 class="mt-4">Comments:</h5>
+                  <ul class="list-group">
+                    <?php
+                      // Fetch comments and person names for this issue
+                      $pdo = Database::connect();
+                      $sql = "
+                        SELECT c.short_comment, c.long_comment, c.posted_date, p.fname, p.lname
+                        FROM iss_comments c
+                        JOIN iss_persons p ON c.per_id = p.id
+                        WHERE c.iss_id = ?
+                      ";
+                      $stmt = $pdo->prepare($sql);
+                      $stmt->execute([$issue['id']]);
+                      $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                      Database::disconnect();
 
-                            <div class="modal fade" id="readCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="readCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="readCommentModalLabel<?php echo $comment['id']; ?>">Read Comment</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p><strong>Short Comment:</strong> <?php echo $comment['short_comment']; ?></p>
-                                            <p><strong>Posted Date:</strong> <?php echo $comment['posted_date']; ?></p>
-                                            <p><strong>Person:</strong> <?php echo $comment['fname'] . ' ' . $comment['lname']; ?></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal fade" id="updateCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="updateCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="updateCommentModalLabel<?php echo $comment['id']; ?>">Update Comment</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <form action="issues_list.php" method="POST">
-                                                <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
-                                                <div class="form-group">
-                                                    <label>Short Comment</label>
-                                                    <input type="text" class="form-control" name="short_comment" value="<?php echo $comment['short_comment']; ?>" required>
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Long Comment</label>
-                                                    <textarea class="form-control" name="long_comment" ><?php echo $comment['long_comment']; ?></textarea>
-                                                </div>
-                                                <button type="submit" class="btn btn-warning">Update Comment</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal fade" id="deleteCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="deleteCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
-                                <div class="modal-dialog" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="deleteCommentModalLabel<?php echo $comment['id']; ?>">Delete Comment</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p>Are you sure you want to delete this comment?</p>
-                                            <form action="issues_list.php" method="POST">
-                                                <input type="hidden" name="delete_comment_id" value="<?php echo $comment['id']; ?>">
-                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        <?php endwhile; Database::disconnect(); ?>
-                    </tbody>
-                </table>
-                
+                      // Display the comments
+                      if (count($comments) > 0) {
+                        foreach ($comments as $comment) {
+                          echo "<li class='list-group-item'>";
+                          echo "<strong>" . htmlspecialchars($comment['short_comment']) . "</strong><br>";
+                          echo "<p>" . nl2br(htmlspecialchars($comment['long_comment'])) . "</p>";
+                          echo "<small>Posted by " . htmlspecialchars($comment['fname']) . " " . htmlspecialchars($comment['lname']) . " on " . htmlspecialchars($comment['posted_date']) . "</small>";
+                          echo "</li>";
+                        }
+                      } else {
+                        echo "<li class='list-group-item'>No comments for this issue.</li>";
+                      }
+                    ?>
+                  </ul>
                 </div>
               </div>
             </div>
