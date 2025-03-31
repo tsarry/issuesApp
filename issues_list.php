@@ -12,6 +12,39 @@ require '../database/database.php';
 
 // Handle Update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
+
+  if(isset($_FILES['pdf_attachment'])) {
+    $fileTmpPath = $_FILES['pdf_attachment']['tmp_name'];
+    $fileName = $_FILES['pdf_attachment']['name'];
+    $fileSize = $_FILES['pdf_attachment']['size'];
+    $fileType = $_FILES['pdf_attachment']['type'];
+    $fileNameCmps = explode(".", $fileName);
+    $fileExtension = strtolower(end($fileNameCmps));
+
+    if($fileExtension !== 'pdf') {
+      die("Only pdf files allowed");
+    }
+
+    if($fileSize > 2 * 1024 * 1024) {
+      die("File size exceeds 2MB limit");
+    }
+
+    $newFileName = MD5(time() . $fileName) . '.' . $fileExtension;
+    $uploadFileDir = './uploads/';
+    $dest_path = $uploadFileDir . $newFileName;
+
+    // if uploads directory does not exist, create it
+    if (!is_dir($uploadFileDir)) {
+      mkdir($uploadFileDir, 0755, true);
+    }
+
+    if(move_uploaded_file($fileTmpPath, $dest_path)) {
+      $attachmentPath = $dest_path;
+    } else {
+      die("error moving file");
+    }
+  } // end pdf attachment
+
     $issue_id = $_POST['issue_id'];
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
@@ -22,10 +55,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
     $project = $_POST['project'];
     $per_id = $_POST['per_id'];
 
+    // $newFileName is PDF attachment
+    // $attachmentPath is the entire path
+
     $pdo = Database::connect();
-    $sql = "UPDATE iss_issues SET short_description=?, long_description=?, open_date=?, close_date=?, priority=?, org=?, project=?, per_id=? WHERE id=?";
+    $sql = "UPDATE iss_issues SET short_description=?, long_description=?, open_date=?, close_date=?, priority=?, org=?, project=?, per_id=?, pdf_attachment WHERE id=?";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$short_description, $long_description, $open_date, $close_date, $priority, $org, $project, $per_id, $issue_id]);
+    $stmt->execute([$short_description, $long_description, $open_date, $close_date, $priority, $org, $project, $per_id, $issue_id, $newFileName]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -50,6 +86,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_issue_id'])) {
 
 // Handle Add New Issue
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) {
+
+  if(isset($_FILES['pdf_attachment'])) {
+    $fileTmpPath = $_FILES['pdf_attachment']['tmp_name'];
+    $fileName = $_FILES['pdf_attachment']['name'];
+    $fileSize = $_FILES['pdf_attachment']['size'];
+    $fileType = $_FILES['pdf_attachment']['type'];
+    $fileNameCmps = explode(".", $fileName);
+    $fileExtension = strtolower(end($fileNameCmps));
+
+    if($fileExtension !== 'pdf') {
+      die("Only pdf files allowed");
+    }
+
+    if($fileSize > 2 * 1024 * 1024) {
+      die("File size exceeds 2MB limit");
+    }
+
+    $newFileName = MD5(time() . $fileName) . '.' . $fileExtension;
+    $uploadFileDir = './uploads/';
+    $dest_path = $uploadFileDir . $newFileName;
+
+    // if uploads directory does not exist, create it
+    if (!is_dir($uploadFileDir)) {
+      mkdir($uploadFileDir, 0755, true);
+    }
+
+    if(move_uploaded_file($fileTmpPath, $dest_path)) {
+      $attachmentPath = $dest_path;
+    } else {
+      die("error moving file");
+    }
+  } // end pdf attachment
+
+
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
     $open_date = $_POST['open_date'];
@@ -59,11 +129,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) 
     $project = $_POST['project'];
     $per_id = $_POST['per_id'];
 
+    // $newFileName is PDF attachment
+    // $attachmentPath is the entire path
+
     $pdo = Database::connect();
-    $sql = 'INSERT INTO iss_issues (short_description, long_description, open_date, close_date, priority, org, project, per_id) 
-            VALUES (?, ?, NOW(), NULL, ?, ?, ?, ?)';
+    $sql = 'INSERT INTO iss_issues (short_description, long_description, open_date, close_date, priority, org, project, per_id, pdf_attachment) 
+            VALUES (?, ?, NOW(), NULL, ?, ?, ?, ?, ?)';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$short_description, $long_description, $priority, $org, $project, $per_id]);
+    $stmt->execute([$short_description, $long_description, $priority, $org, $project, $per_id, $newFileName]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -128,7 +201,7 @@ Database::disconnect();
           </div>
           <div class="modal-body">
             <!-- Form to Add a New Issue -->
-            <form action="issues_list.php" method="POST">
+            <form action="issues_list.php" method="POST" enctype="multipart/form-data">
               <div class="form-group">
                 <label for="short_description">Short Description</label>
                 <input type="text" class="form-control" name="short_description" required>
@@ -174,6 +247,10 @@ Database::disconnect();
                     Database::disconnect();
                   ?>
                 </select>
+              </div>
+              <div class="form-group">
+                <label for="pdf_attachment">PDF</label>
+                <input type="file" class="form-control" name="pdf_attachment" accept="application/pdf" />
               </div>
               <button type="submit" class="btn btn-primary">Add Issue</button>
             </form>
@@ -333,6 +410,10 @@ Database::disconnect();
                           Database::disconnect();
                         ?>
                       </select>
+                    </div>
+                    <div class="form-group">
+                      <label>PDF</label>
+                      <input type="file" class="form-control" name="pdf_attachment" value="<?php echo $issue['pdf_attachment']; ?>" />
                     </div>
                     <button type="submit" class="btn btn-warning">Update Issue</button>
                   </form>
