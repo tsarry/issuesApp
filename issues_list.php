@@ -4,8 +4,8 @@ session_start(); // Start the session
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     // If not logged in, redirect to login page
+    session_destroy();
     header("Location: login.php");
-    exit();
 }
 
 require '../database/database.php';
@@ -45,6 +45,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
     }
   } // end pdf attachment
 
+    if ( !($_SESSION['admin'] == "1" || $_SESSION['user_id'] == $_POST['per_id']) ) {
+      header("Location: issues_list.php");
+      exit();
+    }
     $issue_id = $_POST['issue_id'];
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
@@ -71,6 +75,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
 
 // Handle Delete
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_issue_id'])) {
+  if ( !($_SESSION['admin'] == "1" || $_SESSION['user_id'] == $_POST['per_id']) ) {
+    header("Location: issues_list.php");
+    exit();
+  }
     $delete_issue_id = $_POST['delete_issue_id'];
 
     $pdo = Database::connect();
@@ -187,7 +195,7 @@ Database::disconnect();
     </a>
 
     <!-- Logout Button -->
-    <a href="logout.php"><button>Logout</button></a>
+    <a href="logout.php" class="btn btn-warning">Logout</a>
 
     <!-- Add New Issue Modal -->
     <div class="modal fade" id="addIssueModal" tabindex="-1" role="dialog" aria-labelledby="addIssueModalLabel" aria-hidden="true">
@@ -287,11 +295,13 @@ Database::disconnect();
               <!-- Read Button (R) -->
               <button class="btn btn-info" data-toggle="modal" data-target="#readIssueModal<?php echo $issue['id']; ?>">R</button>
 
+              <?php if($_SESSION['user_id'] == $issue['per_id'] || $_SESSION['admin'] == "1") { ?>
               <!-- Update Button (U) -->
               <button class="btn btn-warning" data-toggle="modal" data-target="#updateIssueModal<?php echo $issue['id']; ?>">U</button>
 
               <!-- Delete Button (D) -->
               <button class="btn btn-danger" data-toggle="modal" data-target="#deleteIssueModal<?php echo $issue['id']; ?>">D</button>
+              <?php } ?>
             </td>
           </tr>
 

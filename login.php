@@ -39,6 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $lname = $user['lname'];
                 $storedHash = $user['pwd_hash'];
                 $storedSalt = $user['pwd_salt'];
+                $admin = $user['admin'];
 
                 // Hash the entered password with the stored salt
                 $hashedPassword = md5($password . $storedSalt);
@@ -50,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $_SESSION['user_email'] = $user['email'];
                     $_SESSION['user_fname'] = $user['fname'];
                     $_SESSION['user_lname'] = $user['lname'];
-                    $_SESSION['user_level'] = $user['admin'];  // Store user level (admin or not)
+                    $_SESSION['admin'] = $user['admin'];  // Store user level (admin or not)
 
                     // Redirect to issues list page
                     header("Location: issues_list.php");
@@ -58,18 +59,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 } else {
                     // Incorrect password
                     $errorMessage = "Invalid email or password.";
+                    session_destroy();
                 }
             } else {
                 // User not found
                 $errorMessage = "Invalid email or password.";
+                session_destroy();
             }
         } catch (PDOException $e) {
             // Handle any PDO errors (e.g., database issues)
             $errorMessage = "Database error: " . $e->getMessage();
+            session_destroy();
         }
     } else {
         // Missing email or password
         $errorMessage = "Please enter both email and password.";
+        session_destroy();
     }
 }
 ?>
@@ -79,10 +84,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Department Status Report (DSR)</title>
+    <title>Issue Tracking System - Login</title>
 </head>
 <body>
-    <h2>Login to Department Status Report (DSR)</h2>
+    <h2>Issue Tracking System - Login</h2>
 
     <?php
     // Display error message if any

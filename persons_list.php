@@ -3,9 +3,9 @@ session_start(); // Start the session
 
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
-    // If not logged in, redirect to login page
-    header("Location: login.php");
-    exit();
+  // If not logged in, redirect to login page
+  session_destroy();
+  header("Location: login.php");
 }
 
 require '../database/database.php';
