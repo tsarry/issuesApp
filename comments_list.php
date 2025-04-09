@@ -12,17 +12,19 @@ require '../database/database.php';
 
 // Handle Update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['comment_id'])) {
+  if ( !($_SESSION['admin'] == "1" || $_SESSION['user_id'] == $_POST['per_id']) ) {
+    header("Location: comments_list.php");
+    exit();
+  }
     $comment_id = $_POST['comment_id'];
     $short_comment = $_POST['short_comment'];
     $long_comment = $_POST['long_comment'];
     $posted_date = $_POST['posted_date'];
-    $per_id = $_POST['per_id'];
-    $iss_id = $_POST['iss_id'];
 
     $pdo = Database::connect();
-    $sql = "UPDATE iss_comments SET short_comment=?, long_comment=?, posted_date=?, per_id=?, iss_id=? WHERE id=?";
+    $sql = "UPDATE iss_comments SET short_comment=?, long_comment=?, posted_date=? WHERE id=?";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$short_comment, $long_comment, $posted_date, $per_id, $iss_id, $comment_id]);
+    $stmt->execute([$short_comment, $long_comment, $posted_date, $comment_id]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -32,6 +34,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['comment_id'])) {
 
 // Handle Delete
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_comment_id'])) {
+  if ( !($_SESSION['admin'] == "1" || $_SESSION['user_id'] == $_POST['per_id']) ) {
+    header("Location: comments_list.php");
+    exit();
+  }
+
     $delete_comment_id = $_POST['delete_comment_id'];
 
     $pdo = Database::connect();
@@ -96,6 +103,11 @@ Database::disconnect();
     <button class="btn btn-success mb-3" data-toggle="modal" data-target="#addCommentModal">
       <i class="fa fa-plus"></i> Add Comment
     </button>
+
+    <!-- Button to redirect to issues_list.php -->
+    <a href="issues_list.php" class="btn btn-info mb-3">
+      <i class="fa fa-arrow-left"></i> Back
+    </a>
 
     <!-- Add New Comment Modal -->
     <div class="modal fade" id="addCommentModal" tabindex="-1" role="dialog" aria-labelledby="addCommentModalLabel" aria-hidden="true">
@@ -203,11 +215,13 @@ Database::disconnect();
               <!-- Read Button (R) -->
               <button class="btn btn-info" data-toggle="modal" data-target="#readCommentModal<?php echo $comment['id']; ?>">R</button>
 
+              <?php if($_SESSION['user_id'] == $comment['per_id'] || $_SESSION['admin'] == "1") { ?>
               <!-- Update Button (U) -->
               <button class="btn btn-warning" data-toggle="modal" data-target="#updateCommentModal<?php echo $comment['id']; ?>">U</button>
 
               <!-- Delete Button (D) -->
               <button class="btn btn-danger" data-toggle="modal" data-target="#deleteCommentModal<?php echo $comment['id']; ?>">D</button>
+              <?php } ?>
             </td>
           </tr>
 
@@ -257,34 +271,6 @@ Database::disconnect();
                     <div class="form-group">
                       <label>Posted Date</label>
                       <input type="date" class="form-control" name="posted_date" value="<?php echo $comment['posted_date']; ?>" required>
-                    </div>
-                    <div class="form-group">
-                      <label>Person</label>
-                      <select class="form-control" name="per_id" required>
-                        <?php
-                          $pdo = Database::connect();
-                          $sql = 'SELECT id, fname, lname FROM iss_persons';
-                          $stmt = $pdo->query($sql);
-                          while ($row = $stmt->fetch()) {
-                            echo "<option value='{$row['id']}'" . ($row['id'] == $comment['per_id'] ? ' selected' : '') . ">{$row['fname']} {$row['lname']}</option>";
-                          }
-                          Database::disconnect();
-                        ?>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label>Issue</label>
-                      <select class="form-control" name="iss_id" required>
-                        <?php
-                          $pdo = Database::connect();
-                          $sql = 'SELECT id, short_description FROM iss_issues';
-                          $stmt = $pdo->query($sql);
-                          while ($row = $stmt->fetch()) {
-                            echo "<option value='{$row['id']}'" . ($row['id'] == $comment['iss_id'] ? ' selected' : '') . ">{$row['short_description']}</option>";
-                          }
-                          Database::disconnect();
-                        ?>
-                      </select>
                     </div>
                     <button type="submit" class="btn btn-warning">Update Comment</button>
                   </form>

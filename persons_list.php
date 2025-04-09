@@ -12,17 +12,21 @@ require '../database/database.php';
 
 // Handle Update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['person_id'])) {
+  if ( !($_SESSION['admin'] == "1" || $_SESSION['user_id'] == $_POST['id']) ) {
+    header("Location: persons_list.php");
+    exit();
+  }
+
     $person_id = $_POST['person_id'];
     $fname = $_POST['fname'];
     $lname = $_POST['lname'];
     $mobile = $_POST['mobile'];
     $email = $_POST['email'];
-    $admin = $_POST['admin'];
 
     $pdo = Database::connect();
-    $sql = "UPDATE iss_persons SET fname=?, lname=?, mobile=?, email=?, admin=? WHERE id=?";
+    $sql = "UPDATE iss_persons SET fname=?, lname=?, mobile=?, email=? WHERE id=?";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$fname, $lname, $mobile, $email, $admin, $person_id]);
+    $stmt->execute([$fname, $lname, $mobile, $email, $person_id]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -32,6 +36,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['person_id'])) {
 
 // Handle Delete
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_person_id'])) {
+  if ( !($_SESSION['admin'] == "1" || $_SESSION['user_id'] == $_POST['id']) ) {
+    header("Location: persons_list.php");
+    exit();
+  }
+
     $delete_person_id = $_POST['delete_person_id'];
 
     $pdo = Database::connect();
@@ -59,7 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['fname'])) {
     $sql = 'INSERT INTO iss_persons (fname, lname, mobile, email, pwd_hash, pwd_salt, admin) 
             VALUES (?, ?, ?, ?, ?, ?, ?)';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$fname, $lname, $mobile, $email, $pwd_hash, $pwd_salt, $admin]);
+    $stmt->execute([$fname, $lname, $mobile, $email, $pwd_hash, $pwd_salt, 'No']);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -98,6 +107,11 @@ Database::disconnect();
     <button class="btn btn-success mb-3" data-toggle="modal" data-target="#addPersonModal">
       <i class="fa fa-plus"></i> Add Person
     </button>
+    
+    <!-- Button to redirect to issues_list.php -->
+    <a href="issues_list.php" class="btn btn-info mb-3">
+      <i class="fa fa-arrow-left"></i> Back
+    </a>
 
     <!-- Add New Person Modal -->
     <div class="modal fade" id="addPersonModal" tabindex="-1" role="dialog" aria-labelledby="addPersonModalLabel" aria-hidden="true">
@@ -132,13 +146,6 @@ Database::disconnect();
                 <label for="password">Password</label>
                 <input type="password" class="form-control" name="password" required>
               </div>
-              <div class="form-group">
-                <label for="admin">Admin</label>
-                <select class="form-control" name="admin" required>
-                  <option value="0">No</option>
-                  <option value="1">Yes</option>
-                </select>
-              </div>
               <button type="submit" class="btn btn-primary">Add Person</button>
             </form>
           </div>
@@ -172,11 +179,13 @@ Database::disconnect();
               <!-- Read Button (R) -->
               <button class="btn btn-info" data-toggle="modal" data-target="#readPersonModal<?php echo $person['id']; ?>">R</button>
 
+              <?php if($_SESSION['user_id'] == $person['id'] || $_SESSION['admin'] == "1") { ?>
               <!-- Update Button (U) -->
               <button class="btn btn-warning" data-toggle="modal" data-target="#updatePersonModal<?php echo $person['id']; ?>">U</button>
 
               <!-- Delete Button (D) -->
               <button class="btn btn-danger" data-toggle="modal" data-target="#deletePersonModal<?php echo $person['id']; ?>">D</button>
+              <?php } ?>
             </td>
           </tr>
 
@@ -230,13 +239,6 @@ Database::disconnect();
                     <div class="form-group">
                       <label>Email</label>
                       <input type="email" class="form-control" name="email" value="<?php echo $person['email']; ?>" required>
-                    </div>
-                    <div class="form-group">
-                      <label>Admin</label>
-                      <select class="form-control" name="admin" required>
-                        <option value="0" <?php echo ($person['admin'] == '0') ? 'selected' : ''; ?>>No</option>
-                        <option value="1" <?php echo ($person['admin'] == '1') ? 'selected' : ''; ?>>Yes</option>
-                      </select>
                     </div>
                     <button type="submit" class="btn btn-warning">Update Person</button>
                   </form>

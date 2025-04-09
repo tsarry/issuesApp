@@ -49,6 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
       header("Location: issues_list.php");
       exit();
     }
+
     $issue_id = $_POST['issue_id'];
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
@@ -63,9 +64,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
     // $attachmentPath is the entire path
 
     $pdo = Database::connect();
-    $sql = "UPDATE iss_issues SET short_description=?, long_description=?, open_date=?, close_date=?, priority=?, org=?, project=?, per_id=?, pdf_attachment WHERE id=?";
+    $sql = "UPDATE iss_issues SET short_description=?, long_description=?, open_date=?, close_date=?, priority=?, org=?, project=?, pdf_attachment=? WHERE id=?";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$short_description, $long_description, $open_date, $close_date, $priority, $org, $project, $per_id, $issue_id, $newFileName]);
+    $stmt->execute([$short_description, $long_description, $open_date, $close_date, $priority, $org, $project, $newFileName, $issue_id,]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -79,6 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_issue_id'])) {
     header("Location: issues_list.php");
     exit();
   }
+
     $delete_issue_id = $_POST['delete_issue_id'];
 
     $pdo = Database::connect();
@@ -126,7 +128,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) 
       die("error moving file");
     }
   } // end pdf attachment
-
 
     $short_description = $_POST['short_description'];
     $long_description = $_POST['long_description'];
@@ -356,11 +357,13 @@ Database::disconnect();
                           <!-- Read Button (R) -->
                           <button class="btn btn-info" data-toggle="modal" data-target="#readCommentModal<?php echo $comment['id']; ?>">R</button>
 
+                          <?php if($_SESSION['user_id'] == $issue['per_id'] || $_SESSION['admin'] == "1") { ?>
                           <!-- Update Button (U) -->
                           <button class="btn btn-warning" data-toggle="modal" data-target="#updateCommentModal<?php echo $comment['id']; ?>">U</button>
 
                           <!-- Delete Button (D) -->
                           <button class="btn btn-danger" data-toggle="modal" data-target="#deleteCommentModal<?php echo $comment['id']; ?>">D</button>
+                          <?php } ?>
 
                           <!-- Read Comment Modal (R) -->
                           <div class="modal fade" id="readCommentModal<?php echo $comment['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="readCommentModalLabel<?php echo $comment['id']; ?>" aria-hidden="true">
@@ -521,20 +524,6 @@ Database::disconnect();
                     <div class="form-group">
                       <label>Project</label>
                       <input type="text" class="form-control" name="project" value="<?php echo $issue['project']; ?>" required>
-                    </div>
-                    <div class="form-group">
-                      <label>Person</label>
-                      <select class="form-control" name="per_id" required>
-                        <?php
-                          $pdo = Database::connect();
-                          $sql = 'SELECT id, fname, lname FROM iss_persons';
-                          $stmt = $pdo->query($sql);
-                          while ($row = $stmt->fetch()) {
-                            echo "<option value='{$row['id']}'" . ($row['id'] == $issue['per_id'] ? ' selected' : '') . ">{$row['fname']} {$row['lname']}</option>";
-                          }
-                          Database::disconnect();
-                        ?>
-                      </select>
                     </div>
                     <div class="form-group">
                       <label>PDF</label>
