@@ -13,7 +13,7 @@ require '../database/database.php';
 // Handle Update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['issue_id'])) {
 
-  if(isset($_FILES['pdf_attachment'])) {
+  if($_FILES['pdf_attachment']['size'] > 0) {
     $fileTmpPath = $_FILES['pdf_attachment']['tmp_name'];
     $fileName = $_FILES['pdf_attachment']['name'];
     $fileSize = $_FILES['pdf_attachment']['size'];
@@ -97,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_issue_id'])) {
 // Handle Add New Issue
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) {
 
-  if(isset($_FILES['pdf_attachment'])) {
+  if($_FILES['pdf_attachment']['size'] > 0) {
     $fileTmpPath = $_FILES['pdf_attachment']['tmp_name'];
     $fileName = $_FILES['pdf_attachment']['name'];
     $fileSize = $_FILES['pdf_attachment']['size'];
@@ -143,9 +143,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) 
 
     $pdo = Database::connect();
     $sql = 'INSERT INTO iss_issues (short_description, long_description, open_date, close_date, priority, org, project, per_id, pdf_attachment) 
-            VALUES (?, ?, NOW(), NULL, ?, ?, ?, ?, ?)';
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$short_description, $long_description, $priority, $org, $project, $per_id, $newFileName]);
+    $stmt->execute([$short_description, $long_description, $open_date, $close_date, $priority, $org, $project, $per_id, $newFileName]);
     Database::disconnect();
 
     // Reload the page to reflect the changes
@@ -155,7 +155,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['short_description'])) 
 
 // Fetch issues from the database to display in the table
 $pdo = Database::connect();
-$sql = 'SELECT * FROM iss_issues';
+
+// Fetch issues from the database to display in the table
+$pdo = Database::connect();
+
+$show = $_GET['show'] ?? 'open'; // Default to "open"
+
+if ($show === 'all') {
+    $sql = 'SELECT * FROM iss_issues';
+} else {
+    $sql = 'SELECT * FROM iss_issues 
+            WHERE close_date IS NULL 
+            OR close_date = "0000-00-00"
+            OR close_date >= CURDATE()';
+}
+
+$stmt = $pdo->query($sql);
+$issues = $stmt->fetchAll(PDO::FETCH_ASSOC);
+Database::disconnect();
+
 $stmt = $pdo->query($sql);
 $issues = $stmt->fetchAll(PDO::FETCH_ASSOC);
 Database::disconnect();
@@ -245,17 +263,31 @@ Database::disconnect();
               </div>
               <div class="form-group">
                 <label for="per_id">Person</label>
-                <select class="form-control" name="per_id" required>
-                  <?php
-                    $pdo = Database::connect();
-                    $sql = 'SELECT id, fname, lname FROM iss_persons';
-                    $stmt = $pdo->query($sql);
-                    while ($row = $stmt->fetch()) {
-                      echo "<option value='{$row['id']}'>{$row['fname']} {$row['lname']}</option>";
-                    }
-                    Database::disconnect();
+                <?php if ($_SESSION['admin'] == "1") { ?>
+                  <select class="form-control" name="per_id" required>
+                    <?php
+                      $pdo = Database::connect();
+                      $sql = 'SELECT id, fname, lname FROM iss_persons';
+                      $stmt = $pdo->query($sql);
+                      while ($row = $stmt->fetch()) {
+                        echo "<option value='{$row['id']}'" . 
+                            ($_SESSION['user_id'] == $row['id'] ? ' selected' : '') . 
+                            ">{$row['fname']} {$row['lname']}</option>";
+                      }
+                      Database::disconnect();
+                    ?>
+                  </select>
+                <?php } else { 
+                  // Non-admin: fetch the user's name to display and lock their ID
+                  $pdo = Database::connect();
+                  $stmt = $pdo->prepare("SELECT fname, lname FROM iss_persons WHERE id = ?");
+                  $stmt->execute([$_SESSION['user_id']]);
+                  $user = $stmt->fetch();
+                  Database::disconnect();
                   ?>
-                </select>
+                  <input type="text" class="form-control" value="<?= htmlspecialchars($user['fname'] . ' ' . $user['lname']); ?>" disabled>
+                  <input type="hidden" name="per_id" value="<?= $_SESSION['user_id']; ?>">
+                <?php } ?>
               </div>
               <div class="form-group">
                 <label for="pdf_attachment">PDF</label>
@@ -266,6 +298,12 @@ Database::disconnect();
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="mb-3">
+      <a href="issues_list.php?show=open" class="btn btn-primary <?= (!isset($_GET['show']) || $_GET['show'] === 'open') ? 'active' : '' ?>">Open Issues</a>
+      <a href="issues_list.php?show=all" class="btn btn-secondary <?= (isset($_GET['show']) && $_GET['show'] === 'all') ? 'active' : '' ?>">All Issues</a>
     </div>
 
     <!-- Issues List Table -->

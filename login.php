@@ -85,28 +85,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Issue Tracking System - Login</title>
+
+    <!-- Bootstrap CSS (Add from a CDN) -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h2>Issue Tracking System - Login</h2>
+    <div class="container">
+        <h2 class="mt-5">Issue Tracking System - Login</h2>
 
-    <?php
-    // Display error message if any
-    if (!empty($errorMessage)) {
-        echo "<p style='color: red;'>$errorMessage</p>";
-    }
-    ?>
+        <?php
+        // Display error message if any
+        if (!empty($errorMessage)) {
+            echo "<div class='alert alert-danger'>$errorMessage</div>";
+        }
+        ?>
 
-    <form method="POST" action="login.php">
-        <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required><br><br>
+        <form method="POST" action="login.php" class="mt-4">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" class="form-control" required>
+            </div>
 
-        <label for="password">Password:</label>
-        <input type="password" name="password" id="password" required><br><br>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+            </div>
 
-        <button type="submit">Login</button>
-    </form>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
 
-    <!-- "Join" Button to go to the registration page -->
-    <p>Don't have an account? <a href="register.php">Join here</a></p>
+        <!-- "Join" Button to go to the registration page -->
+        <p class="mt-3">Don't have an account? <a href="register.php">Join here</a></p>
+    </div>
+
+    <!-- Bootstrap JS (Add from a CDN) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -56,6 +56,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_person_id'])) {
 
 // Handle Add New Person
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['fname'])) {
+
+  // Block if not admin
+  if ($_SESSION['admin'] != "1") {
+    header("Location: persons_list.php");
+    exit();
+  }
+  
     $fname = $_POST['fname'];
     $lname = $_POST['lname'];
     $mobile = $_POST['mobile'];
@@ -103,17 +110,20 @@ Database::disconnect();
 </head>
 <body>
   <div class="container mt-4">
+  <?php if ($_SESSION['admin'] == "1")  { ?>
     <!-- "+" Button to Open the Add Person Modal -->
-    <button class="btn btn-success mb-3" data-toggle="modal" data-target="#addPersonModal">
-      <i class="fa fa-plus"></i> Add Person
-    </button>
+  <button class="btn btn-success mb-3" data-toggle="modal" data-target="#addPersonModal">
+    <i class="fa fa-plus"></i> Add Person
+  </button>
+  <?php } ?>
     
     <!-- Button to redirect to issues_list.php -->
     <a href="issues_list.php" class="btn btn-info mb-3">
       <i class="fa fa-arrow-left"></i> Back
     </a>
 
-    <!-- Add New Person Modal -->
+    <?php if ($_SESSION['admin'] == "1")  { ?>
+      <!-- Add New Person Modal -->
     <div class="modal fade" id="addPersonModal" tabindex="-1" role="dialog" aria-labelledby="addPersonModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -152,6 +162,7 @@ Database::disconnect();
         </div>
       </div>
     </div>
+    <?php } ?>
 
     <!-- Persons List Table -->
     <table class="table table-bordered table-striped">

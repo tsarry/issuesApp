@@ -52,35 +52,55 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Department Status Report (DSR)</title>
+    <title>Register - Issue Tracking System</title>
+
+    <!-- Bootstrap CSS (Add from a CDN) -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h2>Register for Department Status Report (DSR)</h2>
+    <div class="container">
+        <h2 class="mt-5">Register for Issue Tracking System</h2>
 
-    <?php
-    // Display error message if any
-    if (!empty($errorMessage)) {
-        echo "<p style='color: red;'>$errorMessage</p>";
-    }
-    ?>
+        <?php
+        // Display error message if any
+        if (!empty($errorMessage)) {
+            echo "<div class='alert alert-danger'>$errorMessage</div>";
+        }
+        ?>
 
-    <form method="POST" action="register.php">
-        <label for="fname">First Name:</label>
-        <input type="text" name="fname" id="fname" required><br><br>
+        <form method="POST" action="register.php" class="mt-4">
+            <div class="form-group">
+                <label for="fname">First Name:</label>
+                <input type="text" name="fname" id="fname" class="form-control" required>
+            </div>
 
-        <label for="lname">Last Name:</label>
-        <input type="text" name="lname" id="lname" required><br><br>
+            <div class="form-group">
+                <label for="lname">Last Name:</label>
+                <input type="text" name="lname" id="lname" class="form-control" required>
+            </div>
 
-        <label for="mobile">Mobile:</label>
-        <input type="text" name="mobile" id="mobile" required><br><br>
+            <div class="form-group">
+                <label for="mobile">Mobile:</label>
+                <input type="text" name="mobile" id="mobile" class="form-control" required>
+            </div>
 
-        <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required><br><br>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" class="form-control" required>
+            </div>
 
-        <label for="password">Password:</label>
-        <input type="password" name="password" id="password" required><br><br>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+            </div>
 
-        <button type="submit">Register</button>
-    </form>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS (Add from a CDN) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

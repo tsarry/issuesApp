@@ -134,20 +134,35 @@ Database::disconnect();
                 <label for="posted_date">Posted Date</label>
                 <input type="date" class="form-control" name="posted_date" required>
               </div>
-              <div class="form-group">
-                <label for="per_id">Person</label>
-                <select class="form-control" name="per_id" required>
-                  <?php
-                    $pdo = Database::connect();
-                    $sql = 'SELECT id, fname, lname FROM iss_persons';
-                    $stmt = $pdo->query($sql);
-                    while ($row = $stmt->fetch()) {
-                      echo "<option value='{$row['id']}'>{$row['fname']} {$row['lname']}</option>";
-                    }
-                    Database::disconnect();
-                  ?>
-                </select>
-              </div>
+              <?php if ($_SESSION['admin'] == "1"): ?>
+                <div class="form-group">
+                  <label for="per_id">Person</label>
+                  <select class="form-control" name="per_id" required>
+                    <?php
+                      $pdo = Database::connect();
+                      $sql = 'SELECT id, fname, lname FROM iss_persons';
+                      $stmt = $pdo->query($sql);
+                      while ($row = $stmt->fetch()) {
+                        echo "<option value='{$row['id']}'>{$row['fname']} {$row['lname']}</option>";
+                      }
+                      Database::disconnect();
+                    ?>
+                  </select>
+                </div>
+              <?php else: ?>
+                <?php
+                  $pdo = Database::connect();
+                  $stmt = $pdo->prepare("SELECT fname, lname FROM iss_persons WHERE id = ?");
+                  $stmt->execute([$_SESSION['user_id']]);
+                  $user = $stmt->fetch();
+                  Database::disconnect();
+                ?>
+                <input type="hidden" name="per_id" value="<?php echo $_SESSION['user_id']; ?>">
+                <div class="form-group">
+                  <label>Person</label>
+                  <input type="text" class="form-control" value="<?php echo htmlspecialchars($user['fname'] . ' ' . $user['lname']); ?>" disabled>
+                </div>
+              <?php endif; ?>
               <div class="form-group">
                 <label for="iss_id">Issue</label>
                 <select class="form-control" name="iss_id" required>
